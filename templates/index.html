@@ -1,0 +1,267 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="row">
+  <div class="col-lg-7">
+    <div class="card p-3 mb-3">
+      <h5>Upload images</h5>
+      <p class="text-muted">Upload one image for single-item processing or multiple images for stitching (panorama) of elongated/circular artifacts.</p>
+      <form action="{{ url_for('process') }}" method="post" enctype="multipart/form-data">
+        <div class="mb-3">
+          <label class="form-label">Images</label>
+          <input class="form-control" type="file" name="images" accept="image/*" multiple required>
+        </div>
+
+        <div class="mb-3">
+          <h6>Basic options</h6>
+          <div class="form-check">
+            <input class="form-check-input" type="checkbox" name="denoise" id="denoise">
+            <label class="form-check-label" for="denoise">Denoise</label>
+          </div>
+          <div class="form-check">
+            <input class="form-check-input" type="checkbox" name="segment" id="segment">
+            <label class="form-check-label" for="segment">Segment object (mask)</label>
+          </div>
+          <div class="form-check">
+            <input class="form-check-input" type="checkbox" name="edge_detect" id="edge_detect">
+            <label class="form-check-label" for="edge_detect">Edge detection (Canny)</label>
+          </div>
+          <div class="form-check">
+            <input class="form-check-input" type="checkbox" name="binarize" id="binarize" checked disabled>
+            <label class="form-check-label" for="binarize">Final binarization (always applied)</label>
+          </div>
+        </div>
+
+        <div class="mb-3">
+          <h6>Stitching</h6>
+          <div class="form-check">
+            <input class="form-check-input" type="checkbox" name="stitch" id="stitch">
+            <label class="form-check-label" for="stitch">Attempt to stitch multiple uploads into a panorama</label>
+          </div>
+        </div>
+
+        <p class="toggle-advanced" id="toggleAdvanced">Show advanced options ▾</p>
+
+        <div id="advancedPanel" style="display:none;" class="card p-3 mb-3">
+          <h6>Advanced options</h6>
+          <div class="row g-2">
+            <div class="col-md-4">
+              <label class="form-label">Denoise strength (h)</label>
+              <input class="form-range" type="range" name="denoise_h" min="1" max="30" value="10">
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Canny low</label>
+              <input class="form-range" type="range" name="canny_low" min="1" max="300" value="50">
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Canny high</label>
+              <input class="form-range" type="range" name="canny_high" min="1" max="500" value="150">
+            </div>
+
+            <div class="col-md-4">
+              <label class="form-label">Binarize method</label>
+              <select class="form-select" name="binarize_method">
+                <option value="otsu" selected>Otsu (auto)</option>
+                <option value="adaptive">Adaptive</option>
+                <option value="fixed">Fixed threshold</option>
+              </select>
+            </div>
+
+            <div class="col-md-4">
+              <label class="form-label">Fixed threshold</label>
+              <input type="number" class="form-control" name="binarize_thresh" min="1" max="254" value="128">
+            </div>
+
+            <div class="col-md-4">
+              <label class="form-label">Adaptive window (odd)</label>
+              <input type="number" class="form-control" name="adaptive_win" min="3" max="99" value="11" step="2">
+            </div>
+
+            <div class="col-md-4 mt-2">
+              <div class="form-check">
+                <input class="form-check-input" type="checkbox" name="edge_overlay" id="edge_overlay" checked>
+                <label class="form-check-label" for="edge_overlay">Overlay edges on final</label>
+              </div>
+            </div>
+
+            <div class="col-md-4 mt-2">
+              <div class="form-check">
+                <input class="form-check-input" type="checkbox" name="shape_from_shading" id="shape_from_shading">
+                <label class="form-check-label" for="shape_from_shading">Apply shape-from-shading enhancement</label>
+              </div>
+            </div>
+
+            <div class="col-md-4 mt-2">
+              <div class="form-check">
+                <input class="form-check-input" type="checkbox" name="morph_clean" id="morph_clean">
+                <label class="form-check-label" for="morph_clean">Morphological cleanup</label>
+              </div>
+            </div>
+
+            <div class="col-md-4">
+              <label class="form-label">Morph kernel</label>
+              <input type="number" class="form-control" name="morph_kernel" min="1" max="17" value="3">
+            </div>
+
+            <div class="col-md-4">
+              <label class="form-label">Morph op</label>
+              <select class="form-select" name="morph_op">
+                <option value="open">Open (remove noise)</option>
+                <option value="close">Close (fill holes)</option>
+              </select>
+            </div>
+
+            <div class="col-md-4">
+              <label class="form-label">Min contour area for segmentation</label>
+              <input type="number" class="form-control" name="segment_min_area" value="100" min="10" max="100000">
+            </div>
+          </div>
+        </div>
+
+        <div class="d-flex gap-2">
+          <button class="btn btn-primary" type="submit">Generate facsimile</button>
+          <a class="btn btn-outline-secondary" href="{{ url_for('index') }}">Reset</a>
+        </div>
+      </form>
+    </div>
+
+  </div>
+
+  <div class="col-lg-5">
+    <div class="card p-3 mb-3">
+      <h6>Example</h6>
+      <p class="text-muted small">Upload file(s) to preview output here after processing.</p>
+      <img src="{{ url_for('static', filename='placeholder.png') }}" class="preview-img" alt="preview">
+    </div>
+  </div>
+</div>
+<h1>Color Range Editor</h1>
+
+<h2>Existing Color Ranges</h2>
+
+{% for c in colors %}
+<div class="range-box">
+<form action="/update/{{ c.name }}" method="POST" data-picker-group="{{ c.name }}">
+
+    <strong>{{ c.name }}</strong><br>
+
+    <div class="picker-row">
+        <label>Lower Color:</label>
+        <input type="color" id="rgb_{{ c.name }}_low"
+               value="#ffffff">  <!-- User picks a color -->
+    </div>
+
+    <!-- H, S, V hidden fields (auto-filled from color picker) -->
+    <input type="hidden" id="h_{{ c.name }}_low" name="l_h" value="{{ c.lower[0] }}">
+    <input type="hidden" id="s_{{ c.name }}_low" name="l_s" value="{{ c.lower[1] }}">
+    <input type="hidden" id="v_{{ c.name }}_low" name="l_v" value="{{ c.lower[2] }}">
+
+    <div class="picker-row">
+        <label>Upper Color:</label>
+        <input type="color" id="rgb_{{ c.name }}_high"
+               value="#ffffff">
+    </div>
+
+    <input type="hidden" id="h_{{ c.name }}_high" name="u_h" value="{{ c.upper[0] }}">
+    <input type="hidden" id="s_{{ c.name }}_high" name="u_s" value="{{ c.upper[1] }}">
+    <input type="hidden" id="v_{{ c.name }}_high" name="u_v" value="{{ c.upper[2] }}">
+
+    <button type="submit">Update</button>
+    <a href="/delete/{{ c.name }}" style="color:red;">Delete</a>
+
+</form>
+</div>
+{% endfor %}
+
+
+<h2>Add New Color Range</h2>
+
+<form action="/add" method="POST" data-picker-group="new">
+
+    Name: <input name="name" required><br><br>
+
+    <div class="picker-row">
+        <label>Lower Color:</label>
+        <input type="color" id="rgb_new_low" value="#ffffff">
+    </div>
+
+    <input type="hidden" id="h_new_low" name="l_h">
+    <input type="hidden" id="s_new_low" name="l_s">
+    <input type="hidden" id="v_new_low" name="l_v">
+
+    <div class="picker-row">
+        <label>Upper Color:</label>
+        <input type="color" id="rgb_new_high" value="#ffffff">
+    </div>
+
+    <input type="hidden" id="h_new_high" name="u_h">
+    <input type="hidden" id="s_new_high" name="u_s">
+    <input type="hidden" id="v_new_high" name="u_v">
+
+    <button type="submit">Add</button>
+</form>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  document.getElementById("toggleAdvanced").addEventListener("click", function() {
+    var p = document.getElementById("advancedPanel");
+    p.style.display = (p.style.display === "none") ? "block" : "none";
+    this.textContent = p.style.display === "none" ? "Show advanced options ▾" : "Hide advanced options ▴";
+  });
+  function rgbToHsv(r, g, b) {
+            r /= 255; g /= 255; b /= 255;
+
+            let max = Math.max(r, g, b), min = Math.min(r, g, b);
+            let h, s, v = max;
+
+            let d = max - min;
+            s = max === 0 ? 0 : d / max;
+
+            if (max === min) {
+                h = 0;
+            } else {
+                switch (max) {
+                    case r: h = ((g - b) / d + (g < b ? 6 : 0)); break;
+                    case g: h = ((b - r) / d + 2); break;
+                    case b: h = ((r - g) / d + 4); break;
+                }
+                h /= 6;
+            }
+
+            return [
+                Math.round(h * 179), 
+                Math.round(s * 255),
+                Math.round(v * 255)
+            ];
+        }
+
+        // When color changes, update HSV fields
+        function attachColorPicker(rgbInputId, hId, sId, vId) {
+            let picker = document.getElementById(rgbInputId);
+            picker.addEventListener("input", function() {
+                const hex = picker.value;
+                const r = parseInt(hex.substr(1,2), 16);
+                const g = parseInt(hex.substr(3,2), 16);
+                const b = parseInt(hex.substr(5,2), 16);
+
+                let [H,S,V] = rgbToHsv(r,g,b);
+
+                document.getElementById(hId).value = H;
+                document.getElementById(sId).value = S;
+                document.getElementById(vId).value = V;
+            });
+        }
+
+        window.onload = function() {
+            document.querySelectorAll("[data-picker-group]").forEach(function(group) {
+                const id = group.dataset.pickerGroup;
+                attachColorPicker(
+                    "rgb_"+id,
+                    "h_"+id,
+                    "s_"+id,
+                    "v_"+id
+                );
+            });
+        }
+</script>
+{% endblock %}

@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Artifact Facsimile Studio</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+      /* small extras on top of bootstrap */
+      body { padding-top: 1.5rem; padding-bottom: 2rem; background:#f8f9fa; }
+      .card { box-shadow: 0 6px 18px rgba(0,0,0,0.03); }
+      .toggle-advanced { cursor:pointer; color: #0d6efd; text-decoration: underline; }
+      .preview-img { max-width:100%; height:auto; border:1px solid #ddd; background:#fff; padding:6px; }
+    </style>
+    {% block head %}{% endblock %}
+  </head>
+  <body>
+    <div class="container">
+      <header class="mb-4">
+        <h1 class="h3">Artifact Facsimile Studio</h1>
+        <p class="text-muted">Create high-contrast facsimiles of inscriptions, reliefs, vases, and more.</p>
+      </header>
+      {% with messages = get_flashed_messages() %}
+        {% if messages %}
+          <div class="mb-3">
+            {% for m in messages %}
+              <div class="alert alert-warning">{{ m }}</div>
+            {% endfor %}
+          </div>
+        {% endif %}
+      {% endwith %}
+      {% block content %}{% endblock %}
+      <footer class="mt-5 text-muted small">
+        <hr />
+        <div>Computer-vision topics highlighted: Binarization (final image is B/W), Denoising, Segmentation, Edge detection, Stitching, Shape-from-shading (basic).</div>
+      </footer>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    {% block scripts %}{% endblock %}
+  </body>
+</html>
