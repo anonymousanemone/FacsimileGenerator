@@ -4,7 +4,7 @@ from flask import Flask, render_template, request, redirect, url_for, send_from_
 from werkzeug.utils import secure_filename
 
 from testing import process_pipeline  # ← Import the processing pipeline
-import segmentation
+import src.segmentation as segmentation
 
 # -------------------------------
 # Flask setup
@@ -23,11 +23,37 @@ app.secret_key = "replace-me-with-a-secret"
 
 def allowed_file(filename):
     ext = filename.rsplit(".", 1)[-1].lower()
-    return "." in filename and ext in ALLOWED_EXT
+    return "." in filename and ext in ALLOWED_EXT   
+app = Flask(__name__)
+
+
+@app.route('/')
+def home():
+    return render_template('home.html')
+
+
+@app.route('/facsimile')
+def facsimile():
+    return render_template('facsimile.html')
+
+
+@app.route('/stitching')
+def stitching():
+    return render_template('stitching.html')
+
+
+@app.route('/reconstruction')
+def reconstruction():
+    return render_template('reconstruction.html')
+
+
+if __name__ == '__main__':
+    app.run(debug=True)
 
 # -------------------------------
 # Routes
 # -------------------------------
+"""
 @app.route("/", methods=["GET"])
 def index():
     config = segmentation.load_color_config()
@@ -131,3 +157,4 @@ def outputs(filename):
 
 if __name__ == "__main__":
     app.run(debug=True)
+"""

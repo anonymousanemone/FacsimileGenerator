@@ -2,7 +2,7 @@ import os
 import uuid
 import numpy as np
 import cv2
-from utils import read_image, save_image_cv
+from src.utils import read_image, save_image_cv
 
 
 def denoise_image(img, sigma=6.0):

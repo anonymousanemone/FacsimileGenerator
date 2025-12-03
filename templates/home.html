@@ -1,0 +1,32 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="text-center mb-4">
+    <h1>Digital Archaeology Toolkit</h1>
+    <h4 class="text-muted">By Sophia and Kelly</h4>
+</div>
+
+
+<div class="row g-4">
+    <div class="col-md-4">
+        <a href="/facsimile" class="btn p-0 w-100" style="position: relative;">
+            <img src="/static/images/ostraca.jpg" class="img-fluid rounded" alt="Ostraca">
+            <span class="position-absolute top-50 start-50 translate-middle text-white fw-bold h3">Ostraca
+                Facsimile</span>
+        </a>
+    </div>
+    <div class="col-md-4">
+        <a href="/stitching" class="btn p-0 w-100" style="position: relative;">
+            <img src="/static/images/stitching.jpg" class="img-fluid rounded" alt="Stitching">
+            <span class="position-absolute top-50 start-50 translate-middle text-white fw-bold h3">Image
+                Stitching</span>
+        </a>
+    </div>
+    <div class="col-md-4">
+        <a href="/reconstruction" class="btn p-0 w-100" style="position: relative;">
+            <img src="/static/images/reconstruction.jpg" class="img-fluid rounded" alt="3D Reconstruction">
+            <span class="position-absolute top-50 start-50 translate-middle text-white fw-bold h3">3D
+                Reconstruction</span>
+        </a>
+    </div>
+</div>
+{% endblock %}
