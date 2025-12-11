@@ -3,8 +3,8 @@ import uuid
 from flask import Flask, render_template, request, redirect, url_for, send_from_directory, flash
 from werkzeug.utils import secure_filename
 
-from testing import process_pipeline  # ← Import the processing pipeline
-import src.segmentation as segmentation
+from facsimile.testing import process_pipeline  # ← Import the processing pipeline
+import facsimile.src.segmentation as segmentation
 
 # -------------------------------
 # Flask setup
@@ -35,6 +35,44 @@ def home():
 @app.route('/facsimile')
 def facsimile():
     return render_template('facsimile.html')
+
+@app.route("/process", methods=["POST"])
+def process():
+    if "images" not in request.files:
+        flash("No images uploaded")
+        return redirect(url_for("index"))
+    
+    files = request.files.getlist("images")
+    saved_paths = []
+    for f in files:
+        if f and allowed_file(f.filename):
+            filename = secure_filename(f.filename)
+            unique_name = f"{uuid.uuid4().hex}_{filename}"
+            path = os.path.join(app.config["UPLOAD_FOLDER"], unique_name)
+            f.save(path)
+            saved_paths.append(path)
+
+    if not saved_paths:
+        flash("No valid image files uploaded")
+        return redirect(url_for("index"))
+
+    # Collect options from form
+    opts = {
+        "morph_close": request.form.get("morph_kernel", 3),
+        "binarize_method": request.form.get("binarize_method", "WOLF"),
+        "denoise_gaus": request.form.get("denoise_gaus", 10),
+        "denoise_med": request.form.get("denoise_med", 10),
+        "overlay": request.form.get("overlay") == "on",
+    }
+
+    try:
+        output_name = process_pipeline(saved_paths, opts, app.config["OUTPUT_FOLDER"])
+    except Exception as e:
+        flash(f"Processing failed: {e}")
+        return redirect(url_for("index"))
+
+    # output into a certain window
+    return redirect(url_for("result", filename=output_name))
 
 
 @app.route('/stitching')
@@ -121,22 +159,11 @@ def process():
 
     # Collect options from form
     opts = {
-        "stitch": request.form.get("stitch") == "on",
-        "denoise": request.form.get("denoise") == "on",
-        "denoise_h": request.form.get("denoise_h", 10),
-        "segment": request.form.get("segment") == "on",
-        "segment_min_area": request.form.get("segment_min_area", 100),
-        "edge_detect": request.form.get("edge_detect") == "on",
-        "canny_low": request.form.get("canny_low", 50),
-        "canny_high": request.form.get("canny_high", 150),
+        "morph_close": request.form.get("morph_kernel", 3),
+        "binarize_method": request.form.get("binarize_method", "WOLF"),
+        "denoise_gaus": request.form.get("denoise_gaus", 10),
+        "denoise_med": request.form.get("denoise_med", 10),
         "edge_overlay": request.form.get("edge_overlay") == "on",
-        "binarize_method": request.form.get("binarize_method", "otsu"),
-        "binarize_thresh": request.form.get("binarize_thresh", 128),
-        "adaptive_win": request.form.get("adaptive_win", 11),
-        "shape_from_shading": request.form.get("shape_from_shading") == "on",
-        "morph_clean": request.form.get("morph_clean") == "on",
-        "morph_kernel": request.form.get("morph_kernel", 3),
-        "morph_op": request.form.get("morph_op", "open"),
     }
 
     try:

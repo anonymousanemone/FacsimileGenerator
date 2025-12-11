@@ -1,3 +1,7 @@
+# ignore 2g model
+facsimile/sam_vit_h_4b8939.pth
+facsimile/morphsnakes
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[codz]

@@ -13,101 +13,46 @@
         </div>
 
         <div class="mb-3">
-          <h6>Basic options</h6>
+          <h6>Segmentation options</h6>
           <div class="form-check">
-            <input class="form-check-input" type="checkbox" name="denoise" id="denoise">
-            <label class="form-check-label" for="denoise">Denoise</label>
+            <label class="form-check-label" for="segment">Morph Close</label>
+            <input class="form-range" type="range" name="denoise_h" min="1" max="50" value="15">
+          </div>
+          <h6>Binarization options</h6>
+          <div class="col-md-4">
+              <label class="form-label">Method</label>
+              <select class="form-select" name="binarize_method">
+                <option value="OTSU">Otsu</option>
+                <option value="BERNSEN">Bernsen</option>
+                <option value="NIBLACK">Niblack</option>
+                <option value="SAUVOLA">Sauvola</option>
+                <option value="WOLF" selected>Wolf</option>
+                <option value="GATOS">Gatos</option>
+                <option value="NICK">Nick</option>
+                <option value="SU">Su</option>
+                <option value="TRSINGH">Trsingh</option>
+                <option value="BATAINEH">Bataineh</option>
+                <option value="ISAUVOLA">ISauvola</option>
+                <option value="WAN">Wan</option>
+              </select>
+            </div>
+          <div class="form-check">
+            <label class="form-check-label" for="denoise">Denoise (Gaussian)</label>
+            <input class="form-range" type="range" name="denoise_gaus" min="1" max="30" value="1">
           </div>
           <div class="form-check">
-            <input class="form-check-input" type="checkbox" name="segment" id="segment">
-            <label class="form-check-label" for="segment">Segment object (mask)</label>
-          </div>
-          <div class="form-check">
-            <input class="form-check-input" type="checkbox" name="edge_detect" id="edge_detect">
-            <label class="form-check-label" for="edge_detect">Edge detection (Canny)</label>
-          </div>
-          <div class="form-check">
-            <input class="form-check-input" type="checkbox" name="binarize" id="binarize" checked disabled>
-            <label class="form-check-label" for="binarize">Final binarization (always applied)</label>
+            <label class="form-check-label" for="denoise">Denoise (Median)</label>
+            <input class="form-range" type="range" name="denoise_med" min="1" max="30" value="1">
           </div>
         </div>
-
 
         <p class="toggle-advanced" id="toggleAdvanced">Show advanced options ▾</p>
 
         <div id="advancedPanel" style="display:none;" class="card p-3 mb-3">
           <h6>Advanced options</h6>
           <div class="row g-2">
-            <div class="col-md-4">
-              <label class="form-label">Denoise strength (h)</label>
-              <input class="form-range" type="range" name="denoise_h" min="1" max="30" value="10">
-            </div>
-            <div class="col-md-4">
-              <label class="form-label">Canny low</label>
-              <input class="form-range" type="range" name="canny_low" min="1" max="300" value="50">
-            </div>
-            <div class="col-md-4">
-              <label class="form-label">Canny high</label>
-              <input class="form-range" type="range" name="canny_high" min="1" max="500" value="150">
-            </div>
 
-            <div class="col-md-4">
-              <label class="form-label">Binarize method</label>
-              <select class="form-select" name="binarize_method">
-                <option value="otsu" selected>Otsu (auto)</option>
-                <option value="adaptive">Adaptive</option>
-                <option value="fixed">Fixed threshold</option>
-              </select>
-            </div>
 
-            <div class="col-md-4">
-              <label class="form-label">Fixed threshold</label>
-              <input type="number" class="form-control" name="binarize_thresh" min="1" max="254" value="128">
-            </div>
-
-            <div class="col-md-4">
-              <label class="form-label">Adaptive window (odd)</label>
-              <input type="number" class="form-control" name="adaptive_win" min="3" max="99" value="11" step="2">
-            </div>
-
-            <div class="col-md-4 mt-2">
-              <div class="form-check">
-                <input class="form-check-input" type="checkbox" name="edge_overlay" id="edge_overlay" checked>
-                <label class="form-check-label" for="edge_overlay">Overlay edges on final</label>
-              </div>
-            </div>
-
-            <div class="col-md-4 mt-2">
-              <div class="form-check">
-                <input class="form-check-input" type="checkbox" name="shape_from_shading" id="shape_from_shading">
-                <label class="form-check-label" for="shape_from_shading">Apply shape-from-shading enhancement</label>
-              </div>
-            </div>
-
-            <div class="col-md-4 mt-2">
-              <div class="form-check">
-                <input class="form-check-input" type="checkbox" name="morph_clean" id="morph_clean">
-                <label class="form-check-label" for="morph_clean">Morphological cleanup</label>
-              </div>
-            </div>
-
-            <div class="col-md-4">
-              <label class="form-label">Morph kernel</label>
-              <input type="number" class="form-control" name="morph_kernel" min="1" max="17" value="3">
-            </div>
-
-            <div class="col-md-4">
-              <label class="form-label">Morph op</label>
-              <select class="form-select" name="morph_op">
-                <option value="open">Open (remove noise)</option>
-                <option value="close">Close (fill holes)</option>
-              </select>
-            </div>
-
-            <div class="col-md-4">
-              <label class="form-label">Min contour area for segmentation</label>
-              <input type="number" class="form-control" name="segment_min_area" value="100" min="10" max="100000">
-            </div>
           </div>
         </div>
 
@@ -124,12 +69,10 @@
     <div class="card p-3 mb-3">
       <h6>Example</h6>
       <p class="text-muted small">Upload file(s) to preview output here after processing.</p>
-      <img src="{{ url_for('static', filename='placeholder.png') }}" class="preview-img" alt="preview">
+      <img src="{{ url_for('static', filename='images/placeholder.png') }}" class="preview-img" alt="preview">
     </div>
   </div>
 </div>
-<h1>Color Range Editor</h1>
-
 <h2>Existing Color Ranges</h2>
 
 {% for c in colors %}
