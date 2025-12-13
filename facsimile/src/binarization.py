@@ -3,7 +3,6 @@ from skimage import data
 from matplotlib import pyplot as plt
 import skimage
 import cv2
-from PIL import Image, ImageFilter
 import numpy as np
 
 # https://pypi.org/project/doxapy/
@@ -11,32 +10,19 @@ import doxapy
 
 algorithms = ['OTSU', 'BERNSEN', 'NIBLACK', 'SAUVOLA', 'WOLF', 'GATOS', 'NICK', 'SU', 'TRSINGH', 'BATAINEH', 'ISAUVOLA', 'WAN']
 
-def read_image(file):
-    im1 = Image.open(file).convert('L')
-    im1 = im1.filter(ImageFilter.GaussianBlur(radius = 0.8)) 
-    return np.array(im1)
-
-def all_binarize_algos(gray_img):
+def all_binarize_algos(gray_img: np.ndarray):
     all_bins = []
-    for i in range(len(algorithms)):
+    for algo in range(len(algorithms)):
         binary_image = np.empty(gray_img.shape, gray_img.dtype)
         # Pick an algorithm from the DoxaPy library and convert the image to binary
-        facsimile = doxapy.Binarization(getattr(doxapy.Binarization.Algorithms, algorithms[i]))
+        facsimile = doxapy.Binarization(getattr(doxapy.Binarization.Algorithms, algo))
         facsimile.initialize(gray_img)
         facsimile.to_binary(binary_image)
         all_bins.append(binary_image)
     return all_bins
 
-def  plot_all_binarize(img_path):
-    # image = skimage.io.imread(img_path)
-    # hsv_image = skimage.color.rgb2hsv(image)
-    # val = hsv_image[:, :, 2]
-    # grayscale_image = val
-
-    grayscale_image = read_image(img_path)
-    img_n = cv2.normalize(src=grayscale_image, dst=None, alpha=0, beta=255, norm_type=cv2.NORM_MINMAX, dtype=cv2.CV_8U)
-
-    images = all_binarize_algos(img_n)
+def  plot_all_binarize(gray_img: np.ndarray):
+    images = all_binarize_algos(gray_img)
     fig, axes = plt.subplots(3, 4, figsize=(12, 9))
         
     for i, ax in enumerate(axes.flat):
@@ -48,12 +34,10 @@ def  plot_all_binarize(img_path):
     plt.show()
     
 
-def binarize(img_path, func="WOLF", debug=False):
-    grayscale_image = read_image(img_path)
-
-    binary_image = np.empty(grayscale_image.shape, grayscale_image.dtype)
+def binarize(gray_img: np.ndarray, func="WOLF", debug=False):
+    binary_image = np.empty(gray_img.shape, gray_img.dtype)
     facsimile = doxapy.Binarization(getattr(doxapy.Binarization.Algorithms, func))
-    facsimile.initialize(grayscale_image)
+    facsimile.initialize(gray_img)
     facsimile.to_binary(binary_image)
 
     if debug:
@@ -64,5 +48,6 @@ def binarize(img_path, func="WOLF", debug=False):
     
 
 if __name__ == "__main__":
-    plot_all_binarize("sample_img/sample.jpg")
+    gray = cv2.imread("sample_img/sample.jpg", cv2.IMREAD_GRAYSCALE)
+    plot_all_binarize(gray)
 

@@ -4,7 +4,7 @@ import numpy as np
 import cv2
 import matplotlib.pyplot as plt
 from glob import glob
-from src.segmentation import segment_by_color, find_contour, denoise_image
+from src.segmentation import segment_by_color, find_contour, denoise_image, segment_hsv
 from src.binarization import binarize, all_binarize_algos
 from src.utils import read_image, save_image_cv
 
@@ -77,7 +77,7 @@ def show_and_save_triplet(batch, output_folder, counter):
     plt.show()
     plt.close()
 
-def process_single(filename, bin_algo="WOLF", morph_close=15, debug=False):
+def process_single(filename, bin_algo="WOLF", morph_close=15, method="color", debug=False):
     binary_img = binarize(filename, func=bin_algo)
     # pos process step here
     img = cv2.imread(filename)
@@ -86,7 +86,13 @@ def process_single(filename, bin_algo="WOLF", morph_close=15, debug=False):
     # cv2.imshow("denoised", img)
     # cv2.waitKey(0)
     # cv2.destroyAllWindows()
-    mask = segment_by_color(img, debug=debug)
+    if method=="color":
+        mask = segment_by_color(img, debug=debug)
+    elif method=="kmeans":
+        mask = segment_hsv(img, debug=debug)
+    else:
+        print("invalid method")
+        return
     contour_line, mask = find_contour(mask)
     # cv2.imshow("contour_line", contour_line)
     # cv2.waitKey(0)
@@ -124,15 +130,19 @@ def process_single(filename, bin_algo="WOLF", morph_close=15, debug=False):
 def process_pipeline(uploaded_paths, options, output_folder):
     img_path = (uploaded_paths[0])
 
-    # denoise gaus option
+    # binarization
+    # denoise gaussian or bilateral
     binary_img = binarize(img_path, func=options.get("binarize_method"))
     # median filter
     # morph open
     # morph close
 
+    # segmentation
     img = cv2.imread(img_path)
+    # denoise gaussian or bilateral
     denoised = denoise_image(img, h=int(options.get("denoise_gaus", 10)))
     mask = segment_by_color(denoised, morph_close=options.get("morph_close"))
+    # post process with morph close
     contour_line, mask = find_contour(mask)
 
     h, w = mask.shape
@@ -152,8 +162,8 @@ def process_pipeline(uploaded_paths, options, output_folder):
     return out_name
 
 if __name__ == "__main__":
-    process_directory("./data/", output_folder="./results/")
-    # process_single("./data/original-1-7.JPG", debug=True)
+    # process_directory("./data/", output_folder="./results/")
+    process_single("./data/original-1-7.JPG", method="color", debug=True)
 
 
 # To do

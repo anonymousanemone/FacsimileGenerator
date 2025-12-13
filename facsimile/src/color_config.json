@@ -1,0 +1,17 @@
+{ "color_ranges": [
+    {
+        "name": "lower_red1",
+        "lower": [0, 60, 60],
+        "upper": [10, 255, 255]
+    },
+    {
+        "name": "upper_red1",
+        "lower": [170, 60, 60],
+        "upper": [180, 255, 255]
+    },
+    {
+        "name": "yellow",
+        "lower": [15, 30, 80],
+        "upper": [45, 255, 255]
+    }
+]}

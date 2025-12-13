@@ -2,8 +2,13 @@ import cv2
 import numpy as np
 import json
 import os
+import matplotlib.pyplot as plt
+from sklearn.cluster import KMeans
+from scipy.stats import mode
 
-CONFIG_FILE = "color_config.json"
+# CONFIG_FILE = "color_config.json"
+CONFIG_FILE = "nope.json"
+
 
 DEFAULT_CONFIG = {
     "color_ranges": [
@@ -49,13 +54,9 @@ def segment_by_color(img, morph_close=15, debug=False):
     """
     Segments the image based on color definitions stored in JSON.
     """
-
     # Load config (user or default)
     config = load_color_config()
     color_ranges = config["color_ranges"]
-
-    if len(img.shape) == 2:
-        img = cv2.cvtColor(img, cv2.COLOR_GRAY2BGR)
 
     hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
 
@@ -69,15 +70,15 @@ def segment_by_color(img, morph_close=15, debug=False):
         combined_mask = cv2.bitwise_or(combined_mask, mask)
 
     # close holes
-    kernel = np.ones((morph_close, morph_close), np.uint8)
-    mask_clean = cv2.morphologyEx(combined_mask, cv2.MORPH_CLOSE, kernel)
+    # kernel = np.ones((morph_close, morph_close), np.uint8)
+    # mask_clean = cv2.morphologyEx(combined_mask, cv2.MORPH_CLOSE, kernel)
 
     if debug:
-        cv2.imshow("HSV Mask (object)", mask_clean)
+        cv2.imshow("Mask via Color select", combined_mask)
         cv2.waitKey(0)
         cv2.destroyAllWindows()
 
-    return mask_clean
+    return combined_mask
 
 def find_contour(mask, debug=False):
     # find all contours
@@ -111,16 +112,99 @@ def find_contour(mask, debug=False):
 
     return contour_line, filled_mask
 
+def kmeans_segment(img, features, k=2, r=10):
+    h, w = img.shape[:2]
 
-def process_single(filename, debug=False):
-    img = cv2.imread(filename)
+    kmeans = KMeans(n_clusters=k, random_state=0)
+    kmeans.fit(features)
+    labels = kmeans.labels_.reshape(h, w)
 
-    # img = denoise_image(img, sigma=5)
+    # Find majority label in rxr center
+    cx, cy = w // 2, h // 2
+    roi = labels[cy - r:cy + r, cx - r:cx + r]
+
+    m = mode(roi.flatten(), keepdims=False).mode
+    majority_label = int(m)
+
+    binary = np.uint8(labels == majority_label) * 255
+    return labels, binary, majority_label
+
+
+def segment_hsv(img, select_hsv="HSV", morph_close=15, output_file=None, debug=False):
+    img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+
+    # --- Pre-filtering ---
+    img_blur = cv2.GaussianBlur(img, (5, 5), 0)
+    img_blur = cv2.medianBlur(img_blur, 5)
+
+    h, w = img_blur.shape[:2]
+    rgb = img_blur.reshape(-1, 3)
+
+    # HSV feature set
+    hsv_img = cv2.cvtColor(img_blur, cv2.COLOR_RGB2HSV)
+    hsv = hsv_img.reshape(-1, 3)
+    
+    if select_hsv == "H":
+        hsv_selected = hsv[:, [0]]
+    elif select_hsv == "S":
+        hsv_selected = hsv[:, [1]]
+    elif select_hsv == "V":
+        hsv_selected = hsv[:, [2]]
+    else:
+        hsv_selected = hsv
+
+    # RGB + HSV kmeans
+    rgb_hsv = np.column_stack((rgb, hsv_selected))
+    labels, mask, maj_labels = kmeans_segment(
+        img_blur, rgb_hsv, k=2
+    )
+    # close holes
+    # kernel = np.ones((morph_close, morph_close), np.uint8)
+    # mask_clean = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, kernel)
+    
+    if debug:
+        cv2.imshow("Mask via Kmeans with seHSVlect", mask)
+        cv2.waitKey(0)
+        cv2.destroyAllWindows()
+        # plot
+        # fig, axes = plt.subplots(1, 3, figsize=(10, 3))
+
+        # axes[0].set_title("Original")
+        # axes[0].imshow(img_blur)
+        # axes[0].axis("off")
+
+        # axes[1].set_title("KMeans (RGB + %s)" % select_hsv)
+        # axes[1].imshow(labels, cmap="nipy_spectral")
+        # axes[1].axis("off")
+
+
+        # axes[2].set_title("KMeans (RGB + %s) binary" % select_hsv)
+        # axes[2].imshow(mask, cmap="nipy_spectral")
+        # axes[2].axis("off")
+
+        # plt.tight_layout()
+
+        # save if file name
+        # if output_file:
+        #     plt.savefig(output_file, bbox_inches='tight', pad_inches=0)
+        # else:
+        #     plt.show()
+        # plt.close()
+    return mask
+
+def process_single(img, method="color", debug=False):
+    # preprocess step
+    img = denoise_image(img, sigma=5)
     # cv2.imshow("denoised", img)
     # cv2.waitKey(0)
     # cv2.destroyAllWindows()
-
-    segmented = segment_by_color(img, debug=True)
+    if method=="color":
+        segmented = segment_by_color(img, debug=debug)
+    elif method=="kmeans":
+        segmented = segment_hsv(img, debug=debug)
+    else:
+        print("invalid method")
+        return
     contour_line, mask = find_contour(segmented)
 
     if debug:
@@ -138,4 +222,5 @@ def process_single(filename, debug=False):
         cv2.destroyAllWindows()
 
 if __name__ == "__main__":
-    process_single("./data/sample.jpg")
+    img = cv2.imread("../data/sample.jpg")
+    process_single(img, method="color", debug=True)
