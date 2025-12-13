@@ -15,10 +15,9 @@ def median_filter(img, ksize: int = 5):
         ksize += 1
     return cv2.medianBlur(img, ksize)
 
-def bilateral_filter(img, ksize: int = 5):
-    if ksize % 2 == 0:
-        ksize += 1
-    return cv2.medianBlur(img, ksize)
+def bilateral_filter(img, s_color: int, s_space: int):
+    blur = cv2.bilateralFilter(img,5,s_color,s_space)
+    return blur
 
 
 def morph_close(img, ksize: int = 5):

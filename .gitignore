@@ -1,6 +1,8 @@
 # ignore 2g model
 facsimile/sam_vit_h_4b8939.pth
 facsimile/morphsnakes
+static/outputs
+static/uploads
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
